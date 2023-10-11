@@ -13,6 +13,12 @@ class roombooking(models.Model):
     rooms = fields.Float(string='Numero stanza')
     roomGross = fields.Float(string='Costo stanza')
 
+    seq_fatt = fields.Char("sequenza fattura")
+    @api.model
+    def create(self, vals):
+        vals["seq_fatt"] = self.env["ir.sequence"].next_by_code("account.move")
+        return super(roombooking, self).create(vals)
+
     @api.depends('checkin', 'checkout', 'totalGuest')
     def _compute_soggiorno_input(self):
         for record in self:
@@ -28,41 +34,39 @@ class roombooking(models.Model):
 class prenotadettagli(models.Model):
     _inherit = "account.move.line"
 
-    product_id = fields.Many2one('product.product', string="Nome stanza")
-    quantity = fields.Float(string="Numero notti")
+    #product_id = fields.Many2one('product.product', string="Nome stanza")
+    #quantity = fields.Float(string="Numero notti")
     move_id = fields.Many2one('account.move', string='Fattura')
 
-    @api.onchange('product_id')
-    def _onchange_product_id(self):
-        for record in self:
-            if record.product_id and record.product_id.name == "Tassa soggiorno":
-                # Trova l'oggetto account.move associato alla riga di fattura
-                invoice = record.move_id  # Supponendo che il campo 'move_id' collega la riga di fattura alla fattura
-                if invoice:
-                    # Ora puoi accedere agli attributi come 'checkin' e 'checkout' dalla fattura
-                    # Imposta l'orario di check-in e check-out a mezzanotte
-                    checkin_date = fields.Date.from_string(invoice.checkin)
-                    checkout_date = fields.Date.from_string(invoice.checkout)
-                    delta = checkout_date - checkin_date
-                    num_notti = delta.days
-                    num_ospiti = invoice.totalGuest
-                    record.quantity = num_notti * num_ospiti
 
     name = fields.Char(string="Descrizione")
     #price_unit = fields.Float(string="Prezzo unitario")
 
+
+
     @api.onchange('product_id')
     def _onchange_product_id(self):
         for record in self:
-            if record.product_id and record.product_id.name == "PERNOTTO":
-                # Trova l'oggetto account.move associato alla riga di fattura
-                invoice = record.move_id  # Supponendo che il campo 'move_id' collega la riga di fattura alla fattura
-                if invoice:
-                    # Calcola i valori dei campi name, quantity e price_unit
-                    name = f"Prenotazione {invoice.refer} dal {invoice.checkin} al {invoice.checkout}"
-                    quantity = invoice.rooms  # Assumi che rooms sia il numero di stanze
-                    price_unit = invoice.roomGross  # Assumi che roomGross sia il costo della stanza
-                    # Imposta i valori nei campi corrispondenti
-                    record.name = name
-                    record.quantity = quantity
-                    record.price_unit = price_unit
+            if record.product_id:
+                if record.product_id.name == "Tassa soggiorno":
+                    invoice = record.move_id
+                    if invoice:
+                        # Ora puoi accedere agli attributi come 'checkin' e 'checkout' dalla fattura
+                        # Imposta l'orario di check-in e check-out a mezzanotte
+                        checkin_date = fields.Date.from_string(invoice.checkin)
+                        checkout_date = fields.Date.from_string(invoice.checkout)
+                        delta = checkout_date - checkin_date
+                        num_notti = delta.days
+                        num_ospiti = invoice.totalGuest
+                        record.quantity = num_notti * num_ospiti
+                elif record.product_id.name == "PERNOTTO":
+                    invoice = record.move_id
+                    if invoice:
+                        # Calcola i valori dei campi name, quantity e price_unit
+                        name = f"Prenotazione {invoice.refer} dal {invoice.checkin} al {invoice.checkout}"
+                        quantity = invoice.rooms  # Assumi che rooms sia il numero di stanze
+                        price_unit = invoice.roomGross  # Assumi che roomGross sia il costo della stanza
+                        # Imposta i valori nei campi corrispondenti
+                        record.name = name
+                        record.quantity = quantity
+                        record.price_unit = price_unit

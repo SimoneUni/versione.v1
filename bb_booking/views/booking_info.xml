@@ -68,4 +68,13 @@
             -->
         </field>
     </record>
+
+    <record id="FATTURE_SEQUENCE" model="ir.sequence">
+        <field name="name">Sequenza</field>
+        <field name="code">account.move</field>
+        <field name="prefix">ACCR/%(year)s/</field>
+        <field name="number_increment" eval="1"/>
+    </record>
+
 </odoo>
+
