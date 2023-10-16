@@ -12,7 +12,12 @@ class roombooking(models.Model):
     soggiorno_input = fields.Html(string='Soggiorno', compute='_compute_soggiorno_input', sanitize=False, store=False)
     rooms = fields.Float(string='Numero stanza')
     roomGross = fields.Float(string='Costo stanza')
-
+    state = fields.Selection(selection=[
+        ('draft', 'Draft'),
+        ('posted', 'Posted'),
+        ('cancel', 'Cancelled'),
+    ], string='Stato', default='draft', readonly=True)
+    partner_id = fields.Many2one('res.partner', string='Partner', store=True, readonly=False, required=False)
     seq_fatt = fields.Char("sequenza fattura")
     @api.model
     def create(self, vals):
